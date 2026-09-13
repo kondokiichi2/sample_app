@@ -98,3 +98,25 @@ class RememberingTest < UsersLogin
     assert cookies[:remember_token].blank?
   end
 end
+
+class FriendlyForwardingTest < UsersLogin
+
+  test "forwarding url is used only on the first login after the request" do
+    get edit_user_path(@user)
+    assert_redirected_to login_url
+    assert_equal edit_user_url(@user), session[:forwarding_url]
+
+    log_in_as(@user)
+    assert_redirected_to edit_user_url(@user)
+    follow_redirect!
+    assert_response :success
+
+    # ログイン後はforwarding_urlがリセットされているはず
+    assert_nil session[:forwarding_url]
+
+    delete logout_path
+    log_in_as(@user)
+    # 転送先が無いので、デフォルトのプロフィール画面にリダイレクトされる
+    assert_redirected_to @user
+  end
+end
